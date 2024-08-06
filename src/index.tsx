@@ -3,10 +3,10 @@ import {useEffect, useRef, useState} from 'react';
 import * as esbuild from 'esbuild-wasm';
 import {unpkgPathPlugin} from './plugins/unpkg-path-plugin';
 import { fetchPlugin } from './plugins/fetch-plugin';
+import CodeEditor from './components/code-editor';
 
 const App = () => {
   const [input, setInput] = useState('');
-  const [code, setCode] = useState('');
   const serviceRef = useRef<any>();
   const iframeRef = useRef<any>()
 ;
@@ -24,6 +24,8 @@ const App = () => {
   const onClick = async () => {
     if (!serviceRef.current) return;
 
+    iframeRef.current.srcdoc = html;
+
     const result = await serviceRef.current.build({
       entryPoints: ['index.js'],
       bundle: true,
@@ -38,7 +40,6 @@ const App = () => {
       }
     })
 
-    // setCode(result.outputFiles[0].text);
     iframeRef.current.contentWindow.postMessage(result.outputFiles[0].text, '*');
   }
 
@@ -64,12 +65,15 @@ const App = () => {
 
   return (
     <div>
+      <CodeEditor
+        initialValue="const a = 1;"
+        onChange={(value) => setInput(value)}
+      />
       <textarea value={input} onChange={e => setInput(e.target.value)}></textarea>
       <div>
         <button onClick={onClick}>Submit</button>
       </div>
-      <pre>{code}</pre>
-      <iframe ref={iframeRef} srcDoc={html} sandbox="allow-scripts" />
+      <iframe title="iframe" ref={iframeRef} srcDoc={html} sandbox="allow-scripts" />
     </div>
   )
 };
