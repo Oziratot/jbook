@@ -1,22 +1,36 @@
 import React, {useCallback, useEffect, useRef} from 'react';
+import './preview.css'
 
 interface PreviewProps {
  code: string;
+ error: string;
 }
 
 const html = `
     <html>
-      <head></head>
+      <head>
+        <style>
+          html { background-color: #FFF }
+        </style>
+      </head>
       <body>
         <div id="root"></div>
         <script>
+          const handleError = (err) => {
+            const root = document.getElementById('root');
+            root.innerHTML = '<div style="color: red;">' + err + '</div>';
+            console.log(err);
+          };
+        
+          window.addEventListener('error', (event) => {
+            event.preventDefault();
+            handleError(event.error);
+          });
           window.addEventListener('message', (event) => {
             try {
               eval(event.data);
             } catch (error) {
-              const root = document.getElementById('root');
-              root.innerHTML = '<div style="color: red;">' + error + '</div>';
-              throw(error);
+              handleError(error);
             }
           }, false)
         </script>
@@ -24,7 +38,7 @@ const html = `
     </html>
   `
 
-const Preview = ({ code }: PreviewProps) => {
+const Preview = ({ code, error }: PreviewProps) => {
   const iframeRef = useRef<any>();
   const handleLoad = useCallback(() => {
       iframeRef.current.contentWindow.postMessage(code, '*')
@@ -42,7 +56,19 @@ const Preview = ({ code }: PreviewProps) => {
   }, [code, handleLoad]);
 
 
-  return <iframe style={{ backgroundColor: 'white' }} title="iframe" ref={iframeRef} srcDoc={html} sandbox="allow-scripts"/>
+  return (
+    <div className="preview-wrapper">
+      <iframe
+        title="iframe"
+        ref={iframeRef}
+        srcDoc={html}
+        sandbox="allow-scripts"
+      />
+      {error && (
+        <div className="error-message">{error}</div>
+      )}
+    </div>
+  )
 }
 
 export default Preview;
